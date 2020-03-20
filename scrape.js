@@ -1,7 +1,10 @@
 const puppeteer = require('puppeteer');
 
 async function scrape(username, password, loadingBar, progress) {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox']
+    });
     const page = await browser.newPage();
     await page.goto("https://studentdata.k12.somerville.ma.us/x2sis/logon.do");
 
