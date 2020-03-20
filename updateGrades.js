@@ -40,7 +40,7 @@ async function updateGrades() {
             return;
         }
 
-        await gsrun(client);
+        gsrun(client);
     });
     // });
 }
