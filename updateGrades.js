@@ -91,7 +91,7 @@ async function gsrun(client) {
 
             for (let i = 0; i < oldData.length; i += 3) {
                 for (let j = 1; j < oldData[i].length; j++) {
-                    if (oldData[i][j] != "") {
+                    if (oldData[i][j] != "" && oldData[i][j] !== undefined) {
                         oldAssignments.push(new Assignment(oldData[i][j], oldData[i + 1][j], oldData[i + 2][j], className));
                     }
                 }

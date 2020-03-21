@@ -29,12 +29,16 @@ async function scrape(username, password, loadingBar, progress) {
         await page.waitFor('#layoutVerticalTabs > table > tbody > tr:nth-child(2) > td > div > a') //assignments button;
         let weights = {};
 
-        let tableRows = ((await page.$$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr`)).length - 3) / 2;
+        let outerTable = await page.$$('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr');
+
+        let tableRows = ((await page.$$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr`)).length - 3) / 2;
 
         for (let i = 0; i < tableRows; i++) {
             let elt, prop, category;
 
-            elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(1)`);
+
+
+            elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(1)`);
             if (!elt) break;
             prop = await elt.getProperty('innerText');
             category = await prop.jsonValue();
@@ -42,7 +46,7 @@ async function scrape(username, password, loadingBar, progress) {
 
             for (let j = 2; j < 6; j++) {
 
-                elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(${j + 1})`);
+                elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(${j + 1})`);
                 prop = await elt.getProperty('innerText');
 
                 weights[category].push(await prop.jsonValue());
