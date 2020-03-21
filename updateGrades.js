@@ -25,8 +25,9 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-async function updateGrades() {
-    // cron.schedule('0 7-23 * * *', async () => { //run every hour from 7am - 11pm
+function updateGrades() {
+    let result;
+
     const client = new google.auth.JWT(
         keys.client_email,
         null,
@@ -40,9 +41,16 @@ async function updateGrades() {
             return;
         }
 
-        gsrun(client);
+        gsrun(client)
+            .then(res => {
+                result = res;
+            })
+            .catch(err => {
+                console.log(err);
+            });
     });
-    // });
+    return result;
+
 }
 
 async function gsrun(client) {
@@ -206,6 +214,8 @@ async function gsrun(client) {
             }
         });
     }
+
+    return changes;
 
 }
 
