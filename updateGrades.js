@@ -13,7 +13,7 @@ const {
 } = require('./assignment.js');
 const scrape = require('./scrape.js');
 
-require('dotenv').config();
+
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
