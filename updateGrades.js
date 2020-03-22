@@ -189,7 +189,9 @@ async function gsrun(client) {
 
     loadingBar.stop();
 
-    console.log(new Date().toLocaleString());
+    console.log(new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York"
+    }));
 
     if (changes.length > 0) {
         console.log(changes);
