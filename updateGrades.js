@@ -72,7 +72,7 @@ async function gsrun(client) {
     progress = 100;
     loadingBar.update(progress);
 
-    let changes = [];
+    let changes = {};
 
     for (let className in data) {
 
@@ -115,91 +115,94 @@ async function gsrun(client) {
                     }
                 }
                 if (!found) {
-                    changes.push(newAssignment);
+                    if (!changes[className]) {
+                        changes[className] = [];
+                    }
+                    changes[className].push(newAssignment);
                 }
             }
 
         }
 
-        await gsapi.spreadsheets.values.update({
-            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-            range: `${className}!A15`,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: data[className]
-            }
-        });
+        if (changes[className].length > 0) {
+            await gsapi.spreadsheets.values.update({
+                spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+                range: `${className}!A15`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: data[className]
+                }
+            });
+        }
+
         progress += 10;
         loadingBar.update(progress);
     };
 
 
+    if (changes["ENGLISH LITERATURE AP"].length > 0) {
+        let response = await gsapi.spreadsheets.values.get({
+            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            range: `ENGLISH LITERATURE AP!A16:C`
+        });
 
-    let response = await gsapi.spreadsheets.values.get({
-        spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-        range: `ENGLISH LITERATURE AP!A16:C`
-    });
+        progress += 5;
+        loadingBar.update(progress);
 
-    progress += 5;
-    loadingBar.update(progress);
+        let pts = await gsapi.spreadsheets.values.get({
+            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            range: `ENGLISH LITERATURE AP!F2:F3`
+        });
 
-    let pts = await gsapi.spreadsheets.values.get({
-        spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-        range: `ENGLISH LITERATURE AP!F2:F3`
-    });
+        progress += 5;
+        loadingBar.update(progress);
 
-    progress += 5;
-    loadingBar.update(progress);
+        let drop = +pts.data.values[1][0];
+        let bonus = +pts.data.values[0][0];
 
-    let drop = +pts.data.values[1][0];
-    let bonus = +pts.data.values[0][0];
+        let recieved = response.data.values;
 
-    let recieved = response.data.values;
+        let assignments = recieved.map(e => new Assignment(...e));
+        let gb = new GradeBook(assignments, [], drop);
 
-    let assignments = recieved.map(e => new Assignment(...e));
-    let gb = new GradeBook(assignments, [], drop);
+        let best = gb.permute(gb, bonus);
 
-    let best = gb.permute(gb, bonus);
+        progress += 10;
+        loadingBar.update(progress);
 
-    progress += 10;
-    loadingBar.update(progress);
+        let result = [
+            ["Best to Drop", "", ""],
+            ["Grade with Bonus", gb.calcGrade(5), ""],
+            ["Grade with Drop", best.calcGrade(0), ""],
+            ["Grade with Drop and Bonus", best.calcGrade(5), ""],
+            ["", "", ""],
+            ["Assignment", "Earned", "Possible"],
 
-    let result = [
-        ["Best to Drop", "", ""],
-        ["Grade with Bonus", gb.calcGrade(5), ""],
-        ["Grade with Drop", best.calcGrade(0), ""],
-        ["Grade with Drop and Bonus", best.calcGrade(5), ""],
-        ["", "", ""],
-        ["Assignment", "Earned", "Possible"],
+            ...best.removed.map(e => [e.name, e.earned, e.possible])
+        ]
 
-        ...best.removed.map(e => [e.name, e.earned, e.possible])
-    ]
+        await gsapi.spreadsheets.values.update({
+            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            range: `ENGLISH LITERATURE AP!E10`,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: result
+            }
+        });
+    }
 
-    await gsapi.spreadsheets.values.update({
-        spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-        range: `ENGLISH LITERATURE AP!E10`,
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-            values: result
-        }
-    });
+    if (Object.keys(changes).length > 0) {
 
-    progress = 200;
-    loadingBar.update(progress);
-
-    loadingBar.stop();
-
-    console.log(new Date().toLocaleString("en-US", {
-        timeZone: "America/New_York"
-    }));
-
-    if (changes.length > 0) {
         console.log(changes);
 
         let body = "";
 
-        for (let assignment of changes) {
-            body += `${assignment.className}:\n${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
+        for (let className in changes) {
+            body += className + ":\n";
+            for (let assignment of changes[className]) {
+                body += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
+            }
+            body += "\n";
         }
 
         const mailOptions = {
@@ -217,6 +220,17 @@ async function gsrun(client) {
             }
         });
     }
+
+    progress = 200;
+    loadingBar.update(progress);
+
+    loadingBar.stop();
+
+    console.log(new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York"
+    }));
+
+
 
     return changes;
 

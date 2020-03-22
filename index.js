@@ -6,7 +6,7 @@ const port = process.env.PORT || 8080;
 const updateGrades = require('./updateGrades');
 
 app.get('/update', (request, response) => {
-    response.send(updateGrades());
+    response.send(JSON.stringify(updateGrades()));
 });
 
 app.get('/', (req, res) => res.send('Hello World!'));
