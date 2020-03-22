@@ -124,7 +124,7 @@ async function gsrun(client) {
 
         }
 
-        if (changes[className].length > 0) {
+        if (changes[className]) {
             await gsapi.spreadsheets.values.update({
                 spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
                 range: `${className}!A15`,
@@ -140,7 +140,7 @@ async function gsrun(client) {
     };
 
 
-    if (changes["ENGLISH LITERATURE AP"].length > 0) {
+    if (changes["ENGLISH LITERATURE AP"]) {
         let response = await gsapi.spreadsheets.values.get({
             spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
             range: `ENGLISH LITERATURE AP!A16:C`
