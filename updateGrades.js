@@ -5,9 +5,6 @@ const cliProgress = require('cli-progress'); // loading bar because why not
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 
-
-
-
 const keys = require('./keys.json');
 
 const {
@@ -26,7 +23,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-function updateGrades() {
+async function updateGrades(username, password, spreadsheetId) {
     let result;
 
     const client = new google.auth.JWT(
@@ -36,25 +33,20 @@ function updateGrades() {
         ['https://www.googleapis.com/auth/spreadsheets']
     );
 
-    client.authorize((err, tokens) => {
+    client.authorize(async (err, tokens) => {
         if (err) {
             console.log(err);
             return;
         }
 
-        gsrun(client)
-            .then(res => {
-                result = res;
-            })
-            .catch(err => {
-                console.log(err);
-            });
+        result = await gsrun(client, username, password, spreadsheetId);
     });
+
     return result;
 
 }
 
-async function gsrun(client) {
+async function gsrun(client, username, password, spreadsheetId) {
 
     const gsapi = google.sheets({
         version: 'v4',
@@ -67,7 +59,7 @@ async function gsrun(client) {
     loadingBar.start(200, 0);
 
 
-    let data = await scrape(process.env.ASPEN_USERNAME, process.env.ASPEN_PASSWORD, loadingBar, progress);
+    let data = await scrape(username, password, loadingBar, progress);
 
     progress = 100;
     loadingBar.update(progress);
@@ -79,7 +71,7 @@ async function gsrun(client) {
         let newData = flip(data[className]); //because I can't spell transpose consistently
 
         let original = await gsapi.spreadsheets.values.get({
-            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            spreadsheetId,
             range: `${className}!A15:${String.fromCharCode(Math.max(newData.length, 1) + 64)}`
         });
 
@@ -139,11 +131,14 @@ async function gsrun(client) {
         loadingBar.update(progress);
     };
 
+    let classNames = Object.keys(data);
+    let english = classNames.reduce(e => e.match("ENGLISH"));
 
-    if (changes["ENGLISH LITERATURE AP"]) {
+
+    if (changes[english]) {
         let response = await gsapi.spreadsheets.values.get({
             spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-            range: `ENGLISH LITERATURE AP!A16:C`
+            range: `${english}!A16:C`
         });
 
         progress += 5;
@@ -151,7 +146,7 @@ async function gsrun(client) {
 
         let pts = await gsapi.spreadsheets.values.get({
             spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-            range: `ENGLISH LITERATURE AP!F2:F3`
+            range: `${english}!F2:F3`
         });
 
         progress += 5;
@@ -183,7 +178,7 @@ async function gsrun(client) {
 
         await gsapi.spreadsheets.values.update({
             spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
-            range: `ENGLISH LITERATURE AP!E10`,
+            range: `${english}!E10`,
             valueInputOption: 'USER_ENTERED',
             resource: {
                 values: result
