@@ -19,13 +19,9 @@ app.get('/update', (req, res) => {
 
 app.post('/update', (req, res) => {
 
-    console.log(req.body)
-
-    res.send(req.body);
-
-    // updateGrades(req.body.username, req.body.password, req.body.spreadsheetId)
-    //     .then(changes => res.send(JSON.stringify(changes)))
-    //     .catch(err => console.log(err));
+    updateGrades(req.body.username, req.body.password, req.body.spreadsheetId)
+        .then(changes => res.send(JSON.stringify(changes)))
+        .catch(err => console.log(err));
 
 
     /* fetch syntax:
