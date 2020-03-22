@@ -132,7 +132,7 @@ async function gsrun(client, username, password, spreadsheetId) {
     };
 
     let classNames = Object.keys(data);
-    let english = classNames.reduce(e => e.match("ENGLISH"));
+    let english = classNames.filter((e) => e.indexOf("ENGLISH") !== -1)[0];
 
 
     if (changes[english]) {
