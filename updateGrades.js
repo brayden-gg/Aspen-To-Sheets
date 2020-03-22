@@ -118,7 +118,7 @@ async function gsrun(client, username, password, spreadsheetId) {
 
         if (changes[className]) {
             await gsapi.spreadsheets.values.update({
-                spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+                spreadsheetId,
                 range: `${className}!A15`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
@@ -137,7 +137,7 @@ async function gsrun(client, username, password, spreadsheetId) {
 
     if (changes[english]) {
         let response = await gsapi.spreadsheets.values.get({
-            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            spreadsheetId,
             range: `${english}!A16:C`
         });
 
@@ -145,7 +145,7 @@ async function gsrun(client, username, password, spreadsheetId) {
         loadingBar.update(progress);
 
         let pts = await gsapi.spreadsheets.values.get({
-            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            spreadsheetId,
             range: `${english}!F2:F3`
         });
 
@@ -177,7 +177,7 @@ async function gsrun(client, username, password, spreadsheetId) {
         ]
 
         await gsapi.spreadsheets.values.update({
-            spreadsheetId: '1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0',
+            spreadsheetId,
             range: `${english}!E10`,
             valueInputOption: 'USER_ENTERED',
             resource: {
