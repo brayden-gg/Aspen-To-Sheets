@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-async function updateGrades(username, password, spreadsheetId) {
+async function updateGrades(username, password, email_address, spreadsheetId) {
     let result;
 
     const client = new google.auth.JWT(
@@ -39,14 +39,14 @@ async function updateGrades(username, password, spreadsheetId) {
             return;
         }
 
-        result = await gsrun(client, username, password, spreadsheetId);
+        result = await gsrun(client, username, password, email_address, spreadsheetId);
     });
 
     return result;
 
 }
 
-async function gsrun(client, username, password, spreadsheetId) {
+async function gsrun(client, username, password, email_address, spreadsheetId) {
 
     const gsapi = google.sheets({
         version: 'v4',
@@ -202,7 +202,7 @@ async function gsrun(client, username, password, spreadsheetId) {
 
         const mailOptions = {
             from: process.env.GMAIL_USERNAME,
-            to: "trigger@applet.ifttt.com",
+            to: email_address,
             subject: "Your #aspen grades have been updated",
             text: body
         }
