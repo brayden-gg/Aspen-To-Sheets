@@ -191,11 +191,13 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
 
         let body = "";
+        let count = 0;
 
         for (let className in changes) {
             body += className + ":\n";
             for (let assignment of changes[className]) {
                 body += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
+                count++;
             }
             body += "\n";
         }
@@ -211,7 +213,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             if (err) {
                 console.log(err);
             } else {
-                console.log(`Sent!`);
+                console.log(`Sent ${count} changes!`);
             }
         });
     }
