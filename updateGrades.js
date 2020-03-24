@@ -76,8 +76,13 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
         });
 
 
-        if (original.data.values) {
-            let oldData = flip(original.data.values);
+        if (newData.length > 0) {
+            let oldData = [];
+
+            if (original.data.values) {
+                let oldData = flip(original.data.values);
+            }
+
 
             let oldAssignments = [];
             let newAssignments = [];
@@ -187,8 +192,6 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
     }
 
     if (Object.keys(changes).length > 0) {
-
-
 
         let body = "";
         let count = 0;
