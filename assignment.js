@@ -80,7 +80,7 @@ class GradeBook {
 
     calcGrade(bonus) {
         bonus = bonus || 0;
-        return 100 * (this.assignments.reduce((p, c) => p + (isNaN(c.earned) ? 0 : +c.earned, 0)) + bonus) / this.assignments.reduce((p, c) => p + (isNaN(c.possible) ? 0 : +c.possible), 0);
+        return 100 * (this.assignments.reduce((p, c) => p + (isNaN(c.earned) ? 0 : +c.earned), 0) + bonus) / this.assignments.reduce((p, c) => p + (isNaN(c.possible) ? 0 : +c.possible), 0);
     }
 
 

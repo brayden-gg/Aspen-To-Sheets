@@ -167,9 +167,9 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
         let result = [
             ["Best to Drop", "", ""],
-            ["Grade with Bonus", gb.calcGrade(5), ""],
+            ["Grade with Bonus", gb.calcGrade(bonus), ""],
             ["Grade with Drop", best.calcGrade(0), ""],
-            ["Grade with Drop and Bonus", best.calcGrade(5), ""],
+            ["Grade with Drop and Bonus", best.calcGrade(bonus), ""],
             ["", "", ""],
             ["Assignment", "Earned", "Possible"],
 
@@ -188,7 +188,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
     if (Object.keys(changes).length > 0) {
 
-        console.log(changes);
+
 
         let body = "";
 
@@ -211,6 +211,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             if (err) {
                 console.log(err);
             } else {
+                console.log(changes);
                 console.log(`Sent!`);
             }
         });
