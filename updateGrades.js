@@ -80,7 +80,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             let oldData = [];
 
             if (original.data.values) {
-                let oldData = flip(original.data.values);
+                oldData = flip(original.data.values);
             }
 
 
