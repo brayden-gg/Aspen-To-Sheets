@@ -19,7 +19,7 @@ app.get('/update', (req, res) => {
 
 app.post('/update', (req, res) => {
 
-    console.log(req.body.username, req.body.email_address, req.body.spreadsheetId);
+    console.log(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId);
 
     updateGrades(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId)
         .then(changes => res.send(JSON.stringify(changes)))
