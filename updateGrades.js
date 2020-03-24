@@ -211,7 +211,6 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             if (err) {
                 console.log(err);
             } else {
-                console.log(changes);
                 console.log(`Sent!`);
             }
         });
@@ -224,9 +223,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
     console.log(new Date().toLocaleString("en-US", {
         timeZone: "America/New_York"
-    }));
-
-
+    }), username);
 
     return changes;
 
