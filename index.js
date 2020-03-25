@@ -41,6 +41,7 @@ app.post('/update', (req, res) => {
 
 
 
-app.get('/', (req, res) => res.send('Ask Brayden for help setting up'));
+// app.get('/', (req, res) => res.send('Ask Brayden for help setting up'));
+// app.get('/iaskedbrayden', (req, res) => res.send('iaskedbrayden'));
 
 app.listen(port)

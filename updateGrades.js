@@ -69,17 +69,73 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
     for (let className in data) {
 
         let newData = flip(data[className]); //because I can't spell transpose consistently
+        let original;
 
-        let original = await gsapi.spreadsheets.values.get({
-            spreadsheetId,
-            range: `${className}!A15:${String.fromCharCode(Math.max(newData.length, 1) + 64)}`
-        });
+        try {
+
+            original = await gsapi.spreadsheets.values.get({
+                spreadsheetId,
+                range: `${className}!A15:${String.fromCharCode(Math.max(newData.length, 1) + 64)}`
+            });
+
+        } catch (err) {
+
+            await gsapi.spreadsheets.batchUpdate({
+                spreadsheetId,
+                resource: {
+                    requests: [{
+                        addSheet: {
+                            properties: {
+                                title: className
+                            }
+                        }
+                    }],
+                },
+                auth: client,
+            });
+
+            if (!className.match("ENGLISH")) {
+                let numerator = []
+                let denominator = [];
+                for (let i = 0; i < data[className][0].length; i += 3) {
+                    numerator.push(`IFERROR(SUM(${String.fromCharCode(i + 66)}16: ${String.fromCharCode(i + 66)}) / SUM(${String.fromCharCode(i + 67)}16: ${String.fromCharCode(i + 67)}), 0) * ${String.fromCharCode(i + 66)}15`);
+                    denominator.push(`IF(LEN(${String.fromCharCode(i + 66)}16), ${String.fromCharCode(i + 66)}15, 0)`);
+                }
+
+                let formula = `=IFERROR(100 * (${numerator.join(" + ")})/(${denominator.join(" + ")}), "")`
+
+                await gsapi.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${className}!A1`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: [
+                            ["Current Grade", formula]
+                        ]
+                    }
+                });
+            } else {
+                let cells = [
+                    [`Current Grade`, `=IFERROR(F1/H1 * 100, "")`, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
+                    [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
+                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL`]
+                ]
+                await gsapi.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${className}!C1`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: cells
+                    }
+                });
+            }
+        }
 
 
         if (newData.length > 0) {
             let oldData = [];
 
-            if (original.data.values) {
+            if (original && original.data.values) {
                 oldData = flip(original.data.values);
             }
 
