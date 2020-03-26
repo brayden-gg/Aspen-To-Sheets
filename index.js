@@ -19,6 +19,8 @@ app.get('/update', (req, res) => {
 
 app.post('/update', (req, res) => {
 
+    console.log(`Request from ${req.body.username}`);
+
     updateGrades(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId)
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));
