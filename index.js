@@ -21,6 +21,11 @@ app.post('/update', (req, res) => {
 
     console.log(`Request from ${req.body.username}`);
 
+    if (req.body.username.length !== 9 || req.body.password.length < 5) {
+        console.log("Invalid username or password");
+        res.send("Invalid username or password")
+    }
+
     updateGrades(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId)
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));

@@ -118,7 +118,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
                 let cells = [
                     [`Current Grade`, `=IFERROR(F1/H1 * 100, "")`, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
                     [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
-                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL`]
+                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL ASSIGNMENT DROP`]
                 ]
                 await gsapi.spreadsheets.values.update({
                     spreadsheetId,
@@ -261,20 +261,23 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             body += "\n";
         }
 
-        const mailOptions = {
-            from: process.env.GMAIL_USERNAME,
-            to: email_address,
-            subject: "Your #aspen grades have been updated",
-            text: body
+        if (email_address) {
+            const mailOptions = {
+                from: process.env.GMAIL_USERNAME,
+                to: email_address,
+                subject: "Your #aspen grades have been updated",
+                text: body
+            }
+
+            transporter.sendMail(mailOptions, (err, data) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log(`Sent ${count} changes!`);
+                }
+            });
         }
 
-        transporter.sendMail(mailOptions, (err, data) => {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log(`Sent ${count} changes!`);
-            }
-        });
     }
 
     progress = 200;
