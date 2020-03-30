@@ -5,6 +5,7 @@ app.use(express.static("public"));
 app.use(express.json({
     limit: "1mb"
 }));
+
 require('dotenv').config();
 
 const port = process.env.PORT || 3000;
@@ -19,36 +20,17 @@ app.get('/update', (req, res) => {
 
 app.post('/update', (req, res) => {
 
-    console.log(`Request from ${req.body.username}`);
-
     if (req.body.username.length !== 9 || req.body.password.length < 5) {
         console.log("Invalid username or password");
         res.send("Invalid username or password")
     }
 
+    console.log(`Request from ${req.body.username}`);
+
     updateGrades(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId)
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));
 
-
-    /* POST request syntax:
-        options = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        }
-        fetch("/update", options)
-
-    */
-
-
 });
-
-
-
-// app.get('/', (req, res) => res.send('Ask Brayden for help setting up'));
-// app.get('/iaskedbrayden', (req, res) => res.send('iaskedbrayden'));
 
 app.listen(port)

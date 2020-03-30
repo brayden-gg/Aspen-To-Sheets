@@ -25,6 +25,14 @@ async function scrape(username, password, loadingBar, progress) {
         let classNameParam = await classNameElt.getProperty('innerHTML');
         let className = await classNameParam.jsonValue();
 
+        const gradeElt = await page.$(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(8)`);
+        const gradeProp = await gradeElt.getProperty('innerText');
+        const gradeText = await gradeProp.jsonValue();
+
+        allAssignments[className] = {
+            grade: gradeText
+        }
+
         await page.click(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(2) > a`);
         await page.waitFor('#layoutVerticalTabs > table > tbody > tr:nth-child(2) > td > div > a') //assignments button;
         let weights = {};
@@ -35,8 +43,6 @@ async function scrape(username, password, loadingBar, progress) {
 
         for (let i = 0; i < tableRows; i++) {
             let elt, prop, category;
-
-
 
             elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(1)`);
             if (!elt) break;
@@ -142,7 +148,7 @@ async function scrape(username, password, loadingBar, progress) {
             }
         }
 
-        allAssignments[className] = assignments;
+        allAssignments[className].assignments = assignments;
         await page.click('body > form > table > tbody > tr:nth-child(2) > td > table > tbody > tr > td.navTabBackgroundSelected > a');
         progress += 10;
         loadingBar.update(progress);

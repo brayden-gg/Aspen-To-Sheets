@@ -68,7 +68,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
     for (let className in data) {
 
-        let newData = flip(data[className]); //because I can't spell transpose consistently
+        let newData = flip(data[className].assignments); //because I can't spell transpose consistently
         let original;
 
         try {
@@ -97,7 +97,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
             if (!className.match("ENGLISH")) {
                 let numerator = []
                 let denominator = [];
-                for (let i = 0; i < data[className][0].length; i += 3) {
+                for (let i = 0; i < data[className].assignments[0].length; i += 3) {
                     numerator.push(`IFERROR(SUM(${String.fromCharCode(i + 66)}16: ${String.fromCharCode(i + 66)}) / SUM(${String.fromCharCode(i + 67)}16: ${String.fromCharCode(i + 67)}), 0) * ${String.fromCharCode(i + 66)}15`);
                     denominator.push(`IF(LEN(${String.fromCharCode(i + 66)}16), ${String.fromCharCode(i + 66)}15, 0)`);
                 }
@@ -169,9 +169,12 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
                 }
                 if (!found) {
                     if (!changes[className]) {
-                        changes[className] = [];
+                        changes[className] = {
+                            grade: data[className].grade,
+                            assignments: []
+                        };
                     }
-                    changes[className].push(newAssignment);
+                    changes[className].assignments.push(newAssignment);
                 }
             }
 
@@ -183,7 +186,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
                 range: `${className}!A15`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: data[className]
+                    values: data[className].assignments
                 }
             });
         }
@@ -253,8 +256,8 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
         let count = 0;
 
         for (let className in changes) {
-            body += className + ":\n";
-            for (let assignment of changes[className]) {
+            body += `${className} (${changes[className].grade}%)\n`;
+            for (let assignment of changes[className].assignments) {
                 body += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
                 count++;
             }
