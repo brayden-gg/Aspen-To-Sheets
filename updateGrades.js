@@ -102,7 +102,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
                     denominator.push(`IF(LEN(${String.fromCharCode(i + 66)}16), ${String.fromCharCode(i + 66)}15, 0)`);
                 }
 
-                let formula = `=IFERROR(100 * (${numerator.join(" + ")})/(${denominator.join(" + ")}), "")`
+                let formula = numerator.length > 0 ? `=IFERROR(100 * (${numerator.join(" + ")})/(${denominator.join(" + ")}), "")` : "";
 
                 await gsapi.spreadsheets.values.update({
                     spreadsheetId,
