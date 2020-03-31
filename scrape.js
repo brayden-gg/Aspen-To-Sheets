@@ -25,12 +25,12 @@ async function scrape(username, password, loadingBar, progress) {
         let classNameParam = await classNameElt.getProperty('innerHTML');
         let className = await classNameParam.jsonValue();
 
-        const gradeElt = await page.$(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(8)`);
-        const gradeProp = await gradeElt.getProperty('innerText');
-        const gradeText = await gradeProp.jsonValue();
+        // const gradeElt = await page.$(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(8)`);
+        // const gradeProp = await gradeElt.getProperty('innerText');
+        // const gradeText = await gradeProp.jsonValue();
 
         allAssignments[className] = {
-            grade: gradeText
+            grade: "TEST" //gradeText
         }
 
         await page.click(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(2) > a`);
