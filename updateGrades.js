@@ -180,16 +180,14 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
         }
 
-        if (changes[className]) {
-            await gsapi.spreadsheets.values.update({
-                spreadsheetId,
-                range: `${className}!A15`,
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: data[className].assignments
-                }
-            });
-        }
+        await gsapi.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${className}!A15`,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: data[className].assignments
+            }
+        });
 
         progress += 10;
         loadingBar.update(progress);
