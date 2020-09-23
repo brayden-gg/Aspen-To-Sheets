@@ -17,8 +17,10 @@ async function scrape(username, password, loadingBar, progress) {
 
     let allAssignments = {};
 
+    // let numClasses = (await page.$$('#dataGrid > table > tbody > tr')).length - 1
+    // console.log(numClasses)
 
-    for (let classId = 0; classId < 8; classId++) {
+    for (let classId = 0; classId < 11; classId++) {
         await page.waitFor('#dataGrid > table > tbody > tr:nth-child(4) > td:nth-child(8)'); //wait for grades to appear
 
         let classNameElt = await page.$(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(2) > a`);
@@ -44,7 +46,7 @@ async function scrape(username, password, loadingBar, progress) {
         for (let i = 0; i < tableRows; i++) {
             let elt, prop, category;
 
-            elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(1)`);
+            elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i * 2 + 2}) > td:nth-child(1)`);
             if (!elt) break;
             prop = await elt.getProperty('innerText');
             category = await prop.jsonValue();
@@ -52,7 +54,7 @@ async function scrape(username, password, loadingBar, progress) {
 
             for (let j = 2; j < 6; j++) {
 
-                elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i*2+2}) > td:nth-child(${j + 1})`);
+                elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i * 2 + 2}) > td:nth-child(${j + 1})`);
                 prop = await elt.getProperty('innerText');
 
                 weights[category].push(await prop.jsonValue());
