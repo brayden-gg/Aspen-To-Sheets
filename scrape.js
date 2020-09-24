@@ -16,11 +16,10 @@ async function scrape(username, password, loadingBar, progress) {
     await page.click('#layoutHeader > table > tbody > tr > td:nth-child(5) > a');
 
     let allAssignments = {};
+    await page.waitFor('#dataGrid > table > tbody > tr') //table rows
+    let tableRows = (await page.$$('#dataGrid > table > tbody > tr')) //one for each class + the header
 
-    // let numClasses = (await page.$$('#dataGrid > table > tbody > tr')).length - 1
-    // console.log(numClasses)
-
-    for (let classId = 0; classId < 11; classId++) {
+    for (let classId = 0; classId < tableRows.length - 1; classId++) {
         await page.waitFor('#dataGrid > table > tbody > tr:nth-child(4) > td:nth-child(8)'); //wait for grades to appear
 
         let classNameElt = await page.$(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(2) > a`);
