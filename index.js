@@ -13,7 +13,7 @@ const port = process.env.PORT || 3000;
 const updateGrades = require('./updateGrades');
 
 app.get('/update', (req, res) => {
-    updateGrades(process.env.ASPEN_USERNAME, process.env.ASPEN_PASSWORD, "trigger@applet.ifttt.com", "1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0")
+    updateGrades(process.env.ASPEN_USERNAME, process.env.ASPEN_PASSWORD, "https://maker.ifttt.com/trigger/aspen/with/key/hm95k8-U0CbNpQ2qY1zUgz6yPhq78Ypcs8oLT8dU6bs", "1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0")
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));
 });
@@ -27,7 +27,7 @@ app.post('/update', (req, res) => {
 
     console.log(`Request from ${req.body.username}`);
 
-    updateGrades(req.body.username, req.body.password, req.body.email_address, req.body.spreadsheetId)
+    updateGrades(req.body.username, req.body.password, req.body.trigger_url, req.body.spreadsheetId)
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));
 

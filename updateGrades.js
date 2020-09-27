@@ -1,29 +1,13 @@
-const {
-    google
-} = require('googleapis');
+const { google } = require('googleapis');
 const cliProgress = require('cli-progress'); // loading bar because why not
-const cron = require('node-cron');
-const nodemailer = require('nodemailer');
-
+const fetch = require('node-fetch')
 const keys = require('./keys.json');
 
-const {
-    Assignment,
-    GradeBook
-} = require('./assignment.js');
+const { Assignment, GradeBook } = require('./assignment.js');
 const scrape = require('./scrape.js');
 
 
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USERNAME,
-        pass: process.env.GMAIL_PASSWORD
-    },
-});
-
-async function updateGrades(username, password, email_address, spreadsheetId) {
+async function updateGrades(username, password, trigger_url, spreadsheetId) {
     let result;
 
     const client = new google.auth.JWT(
@@ -39,14 +23,14 @@ async function updateGrades(username, password, email_address, spreadsheetId) {
             return;
         }
 
-        result = await gsrun(client, username, password, email_address, spreadsheetId);
+        result = await gsrun(client, username, password, trigger_url, spreadsheetId);
     });
 
     return result;
 
 }
 
-async function gsrun(client, username, password, email_address, spreadsheetId) {
+async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
     const gsapi = google.sheets({
         version: 'v4',
@@ -180,6 +164,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
         }
 
+
         await gsapi.spreadsheets.values.update({
             spreadsheetId,
             range: `${className}!A15`,
@@ -248,36 +233,26 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
         });
     }
 
+    let count = 0;
+
     if (Object.keys(changes).length > 0) {
 
-        let body = "";
-        let count = 0;
+        let text = "";
+
 
         for (let className in changes) {
-            body += `${className} (${changes[className].grade.match(/\d+\.?\d*/)}%)\n`;
+            text += `${className} (${changes[className].grade.match(/\d+\.?\d*/)}%)\n`;
             for (let assignment of changes[className].assignments) {
-                body += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
+                text += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
                 count++;
             }
-            body += "\n";
+            text += "\n";
         }
-
-        if (email_address) {
-            const mailOptions = {
-                from: process.env.GMAIL_USERNAME,
-                to: email_address,
-                subject: "Your #aspen grades have been updated",
-                text: body
-            }
-
-            transporter.sendMail(mailOptions, (err, data) => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log(`Sent ${count} changes!`);
-                }
-            });
-        }
+        await fetch(trigger_url, { //send changes to IFTTT applet via POST request
+            method: 'post',
+            body: JSON.stringify({ value1: text }),
+            headers: { 'Content-Type': 'application/json' },
+        })
 
     }
 
@@ -286,9 +261,7 @@ async function gsrun(client, username, password, email_address, spreadsheetId) {
 
     loadingBar.stop();
 
-    console.log(new Date().toLocaleString("en-US", {
-        timeZone: "America/New_York"
-    }), username);
+    console.log(`${count} changes at ${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })} by user ${username}`);
 
     return changes;
 
