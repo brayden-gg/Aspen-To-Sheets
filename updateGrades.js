@@ -52,17 +52,21 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
     for (let className in data) {
 
+
+        if (data[className].assignments.reduce((p, c) => p + c.length, 0) == 0) continue; //flattened assignments array is empty
+
+
         let newData = flip(data[className].assignments); //because I can't spell transpose consistently
         let original;
 
-        try {
+        try { //see if sheets exist
 
             original = await gsapi.spreadsheets.values.get({
                 spreadsheetId,
                 range: `${className}!A15:${String.fromCharCode(Math.max(newData.length, 1) + 64)}`
             });
 
-        } catch (err) {
+        } catch (err) { // make new sheets for each class
 
             await gsapi.spreadsheets.batchUpdate({
                 spreadsheetId,
@@ -78,15 +82,7 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                 auth: client,
             });
 
-            if (!className.match("ENGLISH")) {
-                let numerator = []
-                let denominator = [];
-                for (let i = 0; i < data[className].assignments[0].length; i += 3) {
-                    numerator.push(`IFERROR(SUM(${String.fromCharCode(i + 66)}16: ${String.fromCharCode(i + 66)}) / SUM(${String.fromCharCode(i + 67)}16: ${String.fromCharCode(i + 67)}), 0) * ${String.fromCharCode(i + 66)}15`);
-                    denominator.push(`IF(LEN(${String.fromCharCode(i + 66)}16), ${String.fromCharCode(i + 66)}15, 0)`);
-                }
-
-                let formula = numerator.length > 0 ? `=IFERROR(100 * (${numerator.join(" + ")})/(${denominator.join(" + ")}), "")` : "";
+            if (!className.match("ENGLISH")) { //Use the regular grading system
 
                 await gsapi.spreadsheets.values.update({
                     spreadsheetId,
@@ -94,11 +90,11 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                     valueInputOption: 'USER_ENTERED',
                     resource: {
                         values: [
-                            ["Current Grade", formula]
+                            ["Current Grade", data[className].grade]
                         ]
                     }
                 });
-            } else {
+            } else { //calculate drops etc
                 let cells = [
                     [`Current Grade`, `=IFERROR(F1/H1 * 100, "")`, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
                     [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
@@ -116,7 +112,8 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
         }
 
 
-        if (newData.length > 0) {
+
+        if (newData.length > 0) {// update sheets
             let oldData = [];
 
             if (original && original.data.values) {
@@ -127,7 +124,8 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
             let oldAssignments = [];
             let newAssignments = [];
 
-            for (let i = 0; i < oldData.length; i += 3) {
+
+            for (let i = 0; i + 2 < oldData.length; i += 3) {
                 for (let j = 1; j < oldData[i].length; j++) {
                     if (oldData[i][j] != "" && oldData[i][j] !== undefined) {
                         oldAssignments.push(new Assignment(oldData[i][j], oldData[i + 1][j], oldData[i + 2][j], className));

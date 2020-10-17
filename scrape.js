@@ -30,13 +30,15 @@ async function scrape(username, password, loadingBar, progress) {
         const gradeProp = await gradeElt.getProperty('innerText');
         const gradeText = await gradeProp.jsonValue();
 
+        let gradeValue = /\d+\.?\d*/.exec(gradeText); //find numbers with optional decimal
         allAssignments[className] = {
-            grade: gradeText
+            grade: gradeValue ? gradeValue[0] : ""
         }
 
         await page.click(`#dataGrid > table > tbody > tr:nth-child(${classId + 2}) > td:nth-child(2) > a`);
-        await page.waitFor('#layoutVerticalTabs > table > tbody > tr:nth-child(2) > td > div > a') //assignments button;
+        await page.waitFor('#layoutVerticalTabs > table > tbody > tr:nth-child(2) > td > div > a') //wait for assignments button to load
         let weights = {};
+        let categoryGrades = {}
 
         let outerTable = await page.$$('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr');
 
@@ -50,13 +52,21 @@ async function scrape(username, password, loadingBar, progress) {
             prop = await elt.getProperty('innerText');
             category = await prop.jsonValue();
             weights[category] = [];
+            categoryGrades[category] = [];
 
-            for (let j = 2; j < 6; j++) {
+            for (let j = 2; j < 6; j++) {//loop through quarters of the year (+2 because category takes up 2)
 
-                elt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i * 2 + 2}) > td:nth-child(${j + 1})`);
-                prop = await elt.getProperty('innerText');
+                let weightElt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i * 2 + 2}) > td:nth-child(${j + 1})`);
+                let weightProp = await weightElt.getProperty('innerText');
 
-                weights[category].push(await prop.jsonValue());
+                let gradeElt = await page.$(`#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > table:nth-child(6) > tbody > tr:nth-child(3) > td > table > tbody > tr:nth-child(${outerTable.length - 2}) > td:nth-child(2) > table > tbody > tr:nth-child(3) > td > div > table > tbody > tr:nth-child(${i * 2 + 3}) > td:nth-child(${j})`);
+
+                let gradeProp = await gradeElt.getProperty('innerText');
+                let gradeText = await gradeProp.jsonValue();
+
+                let gradeValue = /\d+\.?\d*/.exec(gradeText); //find numbers with optional decimal
+                weights[category].push(await weightProp.jsonValue()); //add  the weights for each quarter into the array so we can get the one for the current quarter later
+                categoryGrades[category].push(gradeValue ? gradeValue[0] : "");
             }
         }
 
@@ -64,7 +74,7 @@ async function scrape(username, password, loadingBar, progress) {
         await page.waitFor('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
 
         let quarterDropDown = await page.$('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(3) > td.detailValue > select');
-        let currentQuarter = +(/selected">T(\d)/).exec(await quarterDropDown.getProperty('innerHTML'))[1];
+        let currentQuarter = (/selected">T(\d)/).exec(await quarterDropDown.getProperty('innerHTML'))[1] - 1; // Arrays start at zero and also makes it a number
 
         let assignments = [
             []
@@ -73,19 +83,17 @@ async function scrape(username, password, loadingBar, progress) {
         if (!className.match("ENGLISH")) {
             let catId = 0;
 
-            for (let key in weights) {
+            for (let category in weights) {
                 page.waitFor('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
                 let categoryDropDown = await page.$('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
-                let re = new RegExp(`value="(.*?)">${key}`);
+                let re = new RegExp(`value="(.*?)">${category}`);
                 let dropValue = re.exec(await categoryDropDown.getProperty('innerHTML'))[1];
 
                 await page.select('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select', dropValue);
                 await page.waitFor(`#dataGrid`);
                 let rows = await page.$$('#dataGrid > table > tbody > tr');
-                assignments[0][catId * 3] = key;
-                assignments[0][catId * 3 + 1] = weights[key][currentQuarter - 1];
-                let num = 0;
-                let denom = 0;
+                assignments[0][catId * 3] = category;
+                assignments[0][catId * 3 + 1] = weights[category][currentQuarter];
 
                 for (let i = 1; i < rows.length; i++) {
                     assignments[i] = assignments[i] || []; //if no rows, add one
@@ -105,8 +113,6 @@ async function scrape(username, password, loadingBar, progress) {
                     if (scoreMatch) {
                         assignments[i][catId * 3 + 1] = scoreMatch[1];
                         assignments[i][catId * 3 + 2] = scoreMatch[2];
-                        num += +scoreMatch[1];
-                        denom += +scoreMatch[2]
                     } else {
                         assignments[i][catId * 3 + 1] = 'Ungraded';
                         assignments[i][catId * 3 + 2] = 'Ungraded';
@@ -115,7 +121,7 @@ async function scrape(username, password, loadingBar, progress) {
 
                 }
 
-                assignments[0][catId * 3 + 2] = denom == 0 ? 0 : 100 * num / denom;
+                assignments[0][catId * 3 + 2] = categoryGrades[category][currentQuarter];
 
                 catId++;
             }
@@ -151,7 +157,7 @@ async function scrape(username, password, loadingBar, progress) {
 
         allAssignments[className].assignments = assignments;
         await page.click('body > form > table > tbody > tr:nth-child(2) > td > table > tbody > tr > td.navTabBackgroundSelected > a');
-        progress += 10;
+        progress += 5;
         loadingBar.update(progress);
 
     }
