@@ -4,6 +4,7 @@ const fetch = require('node-fetch')
 const keys = require('./keys.json');
 
 const { Assignment, GradeBook } = require('./assignment.js');
+const getChangesForClass = require('./getChangesForClass.js')
 const scrape = require('./scrape.js');
 
 
@@ -52,22 +53,18 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
     for (let className in data) {
 
-
         if (data[className].assignments.reduce((p, c) => p + c.length, 0) == 0) continue; //flattened assignments array is empty
 
 
-        let newData = flip(data[className].assignments); //because I can't spell transpose consistently
+        let newData = transpose(data[className].assignments); //because I can't spell transpose consistently
         let original;
 
         try { //see if sheets exist
-
             original = await gsapi.spreadsheets.values.get({
                 spreadsheetId,
                 range: `${className}!A15:${String.fromCharCode(Math.max(newData.length, 1) + 64)}`
             });
-
-        } catch (err) { // make new sheets for each class
-
+        } catch (err) { // make new sheets for this class
             await gsapi.spreadsheets.batchUpdate({
                 spreadsheetId,
                 resource: {
@@ -81,88 +78,51 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                 },
                 auth: client,
             });
+        }
 
-            if (!className.match("ENGLISH")) { //Use the regular grading system
+        if (!className.match("ENGLISH")) { //Use the regular grading system
+            await gsapi.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${className}!A1`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [
+                        ["Current Grade", data[className].grade]
+                    ]
+                }
+            });
+        } else { //calculate drops etc
+            let cells = [
+                [`Current Grade`, data[className].grade, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
+                [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
+                [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL ASSIGNMENT DROP`]
+            ]
+            await gsapi.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${className}!C1`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: cells
+                }
+            });
+        }
 
-                await gsapi.spreadsheets.values.update({
-                    spreadsheetId,
-                    range: `${className}!A1`,
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: [
-                            ["Current Grade", data[className].grade]
-                        ]
-                    }
-                });
-            } else { //calculate drops etc
-                let cells = [
-                    [`Current Grade`, `=IFERROR(F1/H1 * 100, "")`, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
-                    [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
-                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL ASSIGNMENT DROP`]
-                ]
-                await gsapi.spreadsheets.values.update({
-                    spreadsheetId,
-                    range: `${className}!C1`,
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: cells
-                    }
-                });
+        let oldData = [];
+
+        if (newData.length > 0 && original && original.data.values) {
+            oldData = transpose(original.data.values);
+        }
+
+        let updatedAssignments = getChangesForClass(className, oldData, newData)
+
+        if (updatedAssignments.length > 0) {
+            changes[className] = {
+                assignments: updatedAssignments,
+                grade: data[className].grade
             }
         }
 
-
-
-        if (newData.length > 0) {// update sheets
-            let oldData = [];
-
-            if (original && original.data.values) {
-                oldData = flip(original.data.values);
-            }
-
-
-            let oldAssignments = [];
-            let newAssignments = [];
-
-
-            for (let i = 0; i + 2 < oldData.length; i += 3) {
-                for (let j = 1; j < oldData[i].length; j++) {
-                    if (oldData[i][j] != "" && oldData[i][j] !== undefined) {
-                        oldAssignments.push(new Assignment(oldData[i][j], oldData[i + 1][j], oldData[i + 2][j], className));
-                    }
-                }
-            }
-
-            for (let i = 0; i < newData.length; i += 3) {
-                for (let j = 1; j < newData[i].length; j++) {
-                    if (newData[i][j] != "" && !isNaN(newData[i + 1][j]) && newData[i][j] !== undefined) {
-                        newAssignments.push(new Assignment(newData[i][j], newData[i + 1][j], newData[i + 2][j], className));
-                    }
-                }
-            }
-
-            for (let newAssignment of newAssignments) {
-                let found = false;
-                for (let oldAssignment of oldAssignments) {
-                    if (newAssignment.equals(oldAssignment)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    if (!changes[className]) {
-                        changes[className] = {
-                            grade: data[className].grade,
-                            assignments: []
-                        };
-                    }
-                    changes[className].assignments.push(newAssignment);
-                }
-            }
-
-        }
-
-
+        //update assignments
         await gsapi.spreadsheets.values.update({
             spreadsheetId,
             range: `${className}!A15`,
@@ -174,7 +134,7 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
         progress += 10;
         loadingBar.update(progress);
-    };
+    }
 
     let classNames = Object.keys(data);
     let english = classNames.filter((e) => e.indexOf("ENGLISH") !== -1)[0];
@@ -239,7 +199,7 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
 
         for (let className in changes) {
-            text += `${className} (${changes[className].grade.match(/\d+\.?\d*/)}%)\n`;
+            text += `${className} (${changes[className].grade})\n`;
             for (let assignment of changes[className].assignments) {
                 text += `${assignment.name} ${assignment.earned} / ${assignment.possible} (${assignment.getGrade().toFixed(1)}%)\n`;
                 count++;
@@ -265,7 +225,7 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
 }
 
-function flip(arr) {
+function transpose(arr) {
     let repl = [];
     for (let i = 0; i < arr[0].length; i++) {
         repl[i] = []
