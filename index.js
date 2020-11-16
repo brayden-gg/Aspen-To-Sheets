@@ -18,6 +18,7 @@ app.get('/update', (req, res) => {
         .catch(err => console.log(err));
 });
 
+
 app.post('/update', (req, res) => {
 
     if (req.body.username.length !== 9 || req.body.password.length < 5) {

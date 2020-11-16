@@ -78,34 +78,41 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                 },
                 auth: client,
             });
-        }
 
-        if (!className.match("ENGLISH")) { //Use the regular grading system
+            let cells;
+
+            if (className.match("ENGLISH"))
+                cells = [
+                    [`Current Grade`, data[className].grade, `Points Earned`, `=SUM(B16:B)`, `Total Points`, `=SUM(C16:C)`],
+                    [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
+                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL GRADE DROP`]
+                ]
+            else {
+                cells = ["Current Grade", data[className].grade]
+            }
+
             await gsapi.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${className}!A1`,
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: [
-                        ["Current Grade", data[className].grade]
-                    ]
-                }
-            });
-        } else { //calculate drops etc
-            let cells = [
-                [`Current Grade`, data[className].grade, `Points Earned`, `=SUM(B:B)`, `Total Points`, `=SUM(C:C)`],
-                [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
-                [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL ASSIGNMENT DROP`]
-            ]
-            await gsapi.spreadsheets.values.update({
-                spreadsheetId,
-                range: `${className}!C1`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
                     values: cells
                 }
             });
         }
+
+
+        await gsapi.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${className}!A1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [
+                    ["Current Grade", data[className].grade]
+                ]
+            }
+        });
+
 
         let oldData = [];
 
@@ -151,7 +158,7 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
         let pts = await gsapi.spreadsheets.values.get({
             spreadsheetId,
-            range: `${english}!F2:F3`
+            range: `${english}!D2:D3`
         });
 
         progress += 5;
@@ -162,33 +169,36 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
 
         let recieved = response.data.values;
 
-        let assignments = recieved.map(e => new Assignment(...e));
-        let gb = new GradeBook(assignments, [], drop);
+        if (drop) {
 
-        let best = gb.permute(gb, bonus);
+            let assignments = recieved.map(e => new Assignment(...e));
+            let gb = new GradeBook(assignments, [], drop);
 
-        progress += 10;
-        loadingBar.update(progress);
+            let best = gb.permute(gb, bonus);
 
-        let result = [
-            ["Best to Drop", "", ""],
-            ["Grade with Bonus", gb.calcGrade(bonus), ""],
-            ["Grade with Drop", best.calcGrade(0), ""],
-            ["Grade with Drop and Bonus", best.calcGrade(bonus), ""],
-            ["", "", ""],
-            ["Assignment", "Earned", "Possible"],
+            progress += 10;
+            loadingBar.update(progress);
 
-            ...best.removed.map(e => [e.name, e.earned, e.possible])
-        ]
+            let result = [
+                ["Best to Drop", "", ""],
+                ["Grade with Bonus", gb.calcGrade(bonus), ""],
+                ["Grade with Drop", best.calcGrade(0), ""],
+                ["Grade with Drop and Bonus", best.calcGrade(bonus), ""],
+                ["", "", ""],
+                ["Assignment", "Earned", "Possible"],
 
-        await gsapi.spreadsheets.values.update({
-            spreadsheetId,
-            range: `${english}!E10`,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: result
-            }
-        });
+                ...best.removed.map(e => [e.name, e.earned, e.possible])
+            ]
+
+            await gsapi.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${english}!E10`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: result
+                }
+            });
+        }
     }
 
     let count = 0;
