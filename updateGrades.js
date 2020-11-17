@@ -79,26 +79,24 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                 auth: client,
             });
 
-            let cells;
 
-            if (className.match("ENGLISH"))
-                cells = [
-                    [`Current Grade`, data[className].grade, `Points Earned`, `=SUM(B16:B)`, `Total Points`, `=SUM(C16:C)`],
-                    [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, `OPTIONAL`],
-                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, `OPTIONAL GRADE DROP`]
+            if (className.match("ENGLISH")) {
+                let cells = [
+                    [`Current Grade`, '', `Points Earned`, `=SUM(B16:B)`, `Total Points`, `=SUM(C16:C)`],
+                    [`Grade With Bonus`, `=IF(AND(F2>0, ISNUMBER(F2)),(F1 + F2)/H1 * 100, "")`, `Bonus Points`, 'OPTIONAL'],
+                    [`Bonus and Drop`, `=IF(AND(F3>0, ISNUMBER(F3)), MAX(F13,I13,K13), "")`, `Drop Number`, 'OPTIONAL GRADE DROP']
                 ]
-            else {
-                cells = ["Current Grade", data[className].grade]
+
+                await gsapi.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${className}!A1`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: cells
+                    }
+                });
             }
 
-            await gsapi.spreadsheets.values.update({
-                spreadsheetId,
-                range: `${className}!A1`,
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: cells
-                }
-            });
         }
 
 
@@ -164,8 +162,8 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
         progress += 5;
         loadingBar.update(progress);
 
-        let drop = +pts.data.values[1][0];
-        let bonus = +pts.data.values[0][0];
+        let drop = +pts.data.values[1] && +pts.data.values[1][0];
+        let bonus = +pts.data.values[0] && +pts.data.values[0][0];
 
         let recieved = response.data.values;
 
