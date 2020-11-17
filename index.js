@@ -13,7 +13,7 @@ const port = process.env.PORT || 3000;
 const updateGrades = require('./updateGrades');
 
 app.get('/update', (req, res) => {
-    updateGrades(process.env.ASPEN_USERNAME, process.env.ASPEN_PASSWORD, "https://maker.ifttt.com/trigger/aspen/with/key/hm95k8-U0CbNpQ2qY1zUgz6yPhq78Ypcs8oLT8dU6bs", "1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0")
+    updateGrades(process.env.ASPEN_USERNAME, process.env.ASPEN_PASSWORD, process.env.IFTTT_URL, "1oXrBcykqODQyuacMJp1GDt2H_gsFsC2NewVQV9z0or0", process.env.CLIENT_EMAIL, process.env.PRIVATE_KEY.replace(/\\n/g, '\n'))
         .then(changes => res.send(JSON.stringify(changes)))
         .catch(err => console.log(err));
 });

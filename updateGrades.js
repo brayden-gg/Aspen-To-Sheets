@@ -8,13 +8,13 @@ const getChangesForClass = require('./getChangesForClass.js')
 const scrape = require('./scrape.js');
 
 
-async function updateGrades(username, password, trigger_url, spreadsheetId) {
+async function updateGrades(username, password, trigger_url, spreadsheetId, client_email, private_key) {
     let result;
 
     const client = new google.auth.JWT(
-        keys.client_email,
+        client_email,
         null,
-        keys.private_key,
+        private_key,
         ['https://www.googleapis.com/auth/spreadsheets']
     );
 
