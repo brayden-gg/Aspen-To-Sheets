@@ -1,8 +1,6 @@
 const { google } = require('googleapis');
 const cliProgress = require('cli-progress'); // loading bar because why not
 const fetch = require('node-fetch')
-const keys = require('./keys.json');
-
 const { Assignment, GradeBook } = require('./assignment.js');
 const getChangesForClass = require('./getChangesForClass.js')
 const scrape = require('./scrape.js');
