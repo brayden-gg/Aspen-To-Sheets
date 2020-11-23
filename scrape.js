@@ -70,6 +70,7 @@ async function scrape(username, password, loadingBar, progress) {
             }
         }
 
+
         await page.click('#layoutVerticalTabs > table > tbody > tr:nth-child(2) > td > div > a');
         await page.waitFor('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
 
@@ -84,6 +85,9 @@ async function scrape(username, password, loadingBar, progress) {
             let catId = 0;
 
             for (let category in weights) {
+
+                if (categoryGrades[category][currentQuarter] == "") continue;
+
                 page.waitFor('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
                 let categoryDropDown = await page.$('#contentArea > table:nth-child(2) > tbody > tr:nth-child(1) > td.contentContainer > center > table > tbody > tr > td > div > table > tbody > tr:nth-child(2) > td.detailValue > select');
                 let re = new RegExp(`value="(.*?)">${category}`);

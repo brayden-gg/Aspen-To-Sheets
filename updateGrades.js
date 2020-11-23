@@ -36,11 +36,11 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
         auth: client,
     });
 
+
     const loadingBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
     let progress = 0;
 
     loadingBar.start(200, 0);
-
 
     let data = await scrape(username, password, loadingBar, progress);
 
@@ -124,6 +124,12 @@ async function gsrun(client, username, password, trigger_url, spreadsheetId) {
                 grade: data[className].grade
             }
         }
+
+        //clear old addignments
+        await gsapi.spreadsheets.values.clear({
+            spreadsheetId,
+            range: `${className}!A15:Z500`
+        });
 
         //update assignments
         await gsapi.spreadsheets.values.update({
